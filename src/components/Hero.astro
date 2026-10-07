@@ -1,0 +1,62 @@
+---
+import { ui, type Lang } from "../i18n/ui";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "en" } = Astro.props;
+const t = ui[lang].hero;
+const home = lang === "fr" ? "/fr/" : "/";
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <!-- Lueurs d'arrière-plan animées (décoratives) -->
+  <div class="aurora" aria-hidden="true"></div>
+
+  <div class="wrap hero-grid">
+    <div>
+      <h1 id="hero-title" data-rise style="--i:0">
+        {t.heading} <span class="grad">{t.headingAccent}</span>
+      </h1>
+      <p class="hero-intro" data-rise style="--i:1">{t.intro}</p>
+      <div class="hero-actions" data-rise style="--i:2">
+        <a class="btn btn-solid" href={`${home}#projects`}>{t.ctaPrimary}</a>
+        <a class="btn" href={`${home}#contact`}>{t.ctaSecondary}</a>
+      </div>
+    </div>
+
+    <aside class="panel" data-rise style="--i:3" aria-label={t.panelTitle}>
+      <div class="panel-head">
+        <span>{t.panelTitle}</span>
+        <span>{t.panelRev}</span>
+      </div>
+      <dl class="spec panel-body">
+        {
+          t.specs.map((s) => (
+            <div class="spec-row">
+              <dt>{s.k}</dt>
+              <span class="leader" aria-hidden="true" />
+              <dd>
+                {"live" in s && s.live && <span class="dot" aria-hidden="true" />}
+                {s.v}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </aside>
+  </div>
+
+  <!-- Bandeau de technologies qui défile -->
+  <div class="marquee" data-rise style="--i:5">
+    <div class="marquee-track">
+      <ul>
+        {t.marquee.map((item) => <li>{item}</li>)}
+      </ul>
+      <ul aria-hidden="true">
+        {t.marquee.map((item) => <li>{item}</li>)}
+      </ul>
+    </div>
+  </div>
+</section>

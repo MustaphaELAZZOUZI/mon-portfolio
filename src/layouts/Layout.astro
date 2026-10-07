@@ -1,0 +1,139 @@
+---
+import "../styles/global.css";
+import { ui, type Lang } from "../i18n/ui";
+
+interface Props {
+  title?: string;
+  description?: string;
+  lang?: Lang;
+}
+
+const { lang = "en" } = Astro.props;
+const t = ui[lang];
+const { title = t.meta.title, description = t.meta.description } = Astro.props;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+---
+
+<!doctype html>
+<html lang={lang} data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0a0c11" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+
+    <title>{title}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+
+    <!-- Applique le thème avant l'affichage pour éviter un flash -->
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var theme =
+            saved || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="progress" aria-hidden="true"></div>
+    <a class="skip" href="#main">{t.skip}</a>
+    <slot />
+
+    <script>
+      // --- Header compact + barre de progression de lecture ---
+      const header = document.querySelector<HTMLElement>(".site-header");
+      const bar = document.querySelector<HTMLElement>(".progress");
+      let ticking = false;
+
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          header?.classList.toggle("scrolled", y > 8);
+          if (bar) {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
+          }
+          ticking = false;
+        });
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      // --- Projecteur qui suit la souris sur les projets ---
+      document.addEventListener(
+        "pointermove",
+        (e) => {
+          const card = (e.target as Element | null)?.closest?.<HTMLElement>(".project");
+          if (!card) return;
+          const r = card.getBoundingClientRect();
+          card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+          card.style.setProperty("--my", `${e.clientY - r.top}px`);
+        },
+        { passive: true },
+      );
+
+      // --- Apparition au défilement ---
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (!reduce && "IntersectionObserver" in window) {
+        const targets = document.querySelectorAll<HTMLElement>(
+          [
+            ".sec-head",
+            ".about-text > p",
+            ".stack-title",
+            ".stack-group",
+            ".filters",
+            ".project",
+            ".contact-info > *",
+            ".form",
+            ".footer-grid > div",
+            ".footer-bottom",
+            ".prose > *",
+          ].join(","),
+        );
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            let i = 0;
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              const el = entry.target as HTMLElement;
+              // décalage en cascade pour les éléments qui apparaissent ensemble
+              el.style.setProperty("--d", `${Math.min(i++, 5) * 80}ms`);
+              el.classList.add("is-visible");
+              io.unobserve(el);
+              // nettoyage : l'élément retrouve son état normal (survols, etc.)
+              setTimeout(() => el.classList.remove("reveal", "is-visible"), 2200);
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        targets.forEach((el) => {
+          // Ce qui est déjà visible au chargement n'est pas masqué (pas de clignotement)
+          if (el.getBoundingClientRect().top < window.innerHeight) return;
+          el.classList.add("reveal");
+          io.observe(el);
+        });
+      }
+    </script>
+  </body>
+</html>

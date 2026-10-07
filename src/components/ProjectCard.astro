@@ -1,0 +1,38 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { ui, type Lang } from "../i18n/ui";
+
+interface Props {
+  project: CollectionEntry<"projects">;
+  index: number;
+  lang?: Lang;
+}
+
+const { project, index, lang = "en" } = Astro.props;
+const t = ui[lang].projects;
+const { data } = project;
+
+// id = "en/projet-1" ou "fr/projet-1"  ->  slug = "projet-1"
+const slug = project.id.split("/").pop();
+const href = lang === "fr" ? `/fr/projects/${slug}` : `/projects/${slug}`;
+const ref = `P-${String(index + 1).padStart(2, "0")}`;
+---
+
+<article class="project" data-category={data.category}>
+  <div class="project-ref">{ref}</div>
+
+  <div>
+    <h3><a href={href}>{data.title}</a></h3>
+    <p class="project-desc">{data.description}</p>
+    <ul class="tags" aria-label="Tags">
+      {data.tags.map((tag) => <li class="tag">{tag}</li>)}
+    </ul>
+  </div>
+
+  <div class="project-meta">
+    <span>{t.categories[data.category]}{data.year ? `, ${data.year}` : ""}</span>
+    <a href={href}>{t.details}</a>
+    {data.link && <a href={data.link} target="_blank" rel="noopener noreferrer">{t.live}</a>}
+    {data.repo && <a href={data.repo} target="_blank" rel="noopener noreferrer">{t.code}</a>}
+  </div>
+</article>

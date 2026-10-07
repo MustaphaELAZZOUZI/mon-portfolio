@@ -1,0 +1,41 @@
+---
+import { ui, type Lang } from "../i18n/ui";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "en" } = Astro.props;
+const t = ui[lang].about;
+---
+
+<section class="section" id="about" aria-labelledby="about-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <span class="sec-tag">{t.tag}</span>
+      <h2 id="about-title">{t.title}</h2>
+    </header>
+
+    <div class="about-grid">
+      <div class="about-text">
+        <p>{t.p1}</p>
+        <p>{t.p2}</p>
+      </div>
+
+      <div>
+        <h3 class="stack-title">{t.stackTitle}</h3>
+        {
+          t.groups.map((g) => (
+            <div class="stack-group">
+              <div class="stack-top">
+                <h4>{g.name}</h4>
+                <span class="stack-level">{g.level}</span>
+              </div>
+              <p>{g.items}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

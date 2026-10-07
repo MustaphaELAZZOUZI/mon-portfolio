@@ -1,0 +1,66 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
+import { ui, site, type Lang } from "../i18n/ui";
+
+interface Props {
+  project: CollectionEntry<"projects">;
+  lang: Lang;
+}
+
+const { project, lang } = Astro.props;
+const { Content } = await render(project);
+const { data } = project;
+const t = ui[lang];
+const backHref = lang === "fr" ? "/fr/#projects" : "/#projects";
+---
+
+<Layout title={`${data.title} | ${site.name}`} description={data.description} lang={lang}>
+  <Header lang={lang} />
+  <main id="main" class="detail">
+    <div class="wrap">
+      <a class="back" href={backHref}>← {t.detail.back}</a>
+
+      <h1>{data.title}</h1>
+      <p class="detail-lead">{data.description}</p>
+
+      <div class="detail-grid">
+        <div class="prose">
+          <Content />
+        </div>
+
+        <aside class="detail-side">
+          <dl class="spec panel panel-body">
+            <div class="spec-row">
+              <dt>{t.detail.category}</dt>
+              <span class="leader" aria-hidden="true" />
+              <dd>{t.projects.categories[data.category]}</dd>
+            </div>
+            {
+              data.year && (
+                <div class="spec-row">
+                  <dt>{t.detail.year}</dt>
+                  <span class="leader" aria-hidden="true" />
+                  <dd>{data.year}</dd>
+                </div>
+              )
+            }
+          </dl>
+
+          <div>
+            <p class="mono" style="font-size:.82rem;color:var(--ink-2);margin-bottom:.5rem">{t.detail.stack}</p>
+            <ul class="tags">
+              {data.tags.map((tag) => <li class="tag">{tag}</li>)}
+            </ul>
+          </div>
+
+          {data.link && <a class="btn btn-solid" href={data.link} target="_blank" rel="noopener noreferrer">{t.projects.live}</a>}
+          {data.repo && <a class="btn" href={data.repo} target="_blank" rel="noopener noreferrer">{t.projects.code}</a>}
+        </aside>
+      </div>
+    </div>
+  </main>
+  <Footer lang={lang} />
+</Layout>

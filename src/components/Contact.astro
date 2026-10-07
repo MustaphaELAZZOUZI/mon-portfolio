@@ -1,0 +1,139 @@
+---
+import { ui, site, type Lang } from "../i18n/ui";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "en" } = Astro.props;
+const t = ui[lang].contact;
+
+const links = [
+  { k: "Email", v: site.email, href: `mailto:${site.email}` },
+  { k: "LinkedIn", v: "mustapha-el-azzouzi", href: site.linkedin },
+  { k: "GitHub", v: "MustaphaELAZZOUZI", href: site.github },
+];
+const subject = lang === "fr" ? "Nouveau message depuis votre portfolio" : "New message from your portfolio";
+---
+
+<section class="section" id="contact" aria-labelledby="contact-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <span class="sec-tag">{t.tag}</span>
+      <h2 id="contact-title">{t.title}</h2>
+    </header>
+
+    <div class="contact-grid">
+      <div class="contact-info">
+        <p>{t.intro}</p>
+        <dl class="spec">
+          {
+            links.map((row) => (
+              <div class="spec-row">
+                <dt>{row.k}</dt>
+                <span class="leader" aria-hidden="true" />
+                <dd>
+                  <a
+                    class="spec-link"
+                    href={row.href}
+                    target={row.href.startsWith("mailto") ? undefined : "_blank"}
+                    rel={row.href.startsWith("mailto") ? undefined : "noopener noreferrer"}
+                  >
+                    {row.v}
+                  </a>
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+
+      <form
+        class="form"
+        id="contact-form"
+        action={site.formFallback}
+        method="POST"
+        data-endpoint={site.formEndpoint}
+        data-sending={t.sending}
+        data-success={t.success}
+        data-error={t.error}
+        data-email={site.email}
+      >
+        <div class="field">
+          <label for="name">{t.name}</label>
+          <input id="name" name="name" type="text" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="email">{t.email}</label>
+          <input id="email" name="email" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="message">{t.message}</label>
+          <textarea id="message" name="message" required></textarea>
+        </div>
+
+        <!-- Réglages FormSubmit -->
+        <input type="hidden" name="_subject" value={subject} />
+        <input type="hidden" name="_template" value="table" />
+        <input type="hidden" name="_captcha" value="false" />
+        <!-- Champ piège anti-spam : ne pas remplir -->
+        <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+        <div>
+          <button class="btn btn-solid" type="submit">{t.send}</button>
+        </div>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <p class="form-note">{t.note}</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById("contact-form") as HTMLFormElement | null;
+
+  if (form) {
+    const status = form.querySelector<HTMLElement>(".form-status")!;
+    const button = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+    const label = button.textContent ?? "";
+
+    const show = (state: "sending" | "success" | "error", text: string, mail?: string) => {
+      status.dataset.state = state;
+      status.textContent = text;
+      if (mail) {
+        const a = document.createElement("a");
+        a.href = `mailto:${mail}`;
+        a.textContent = mail;
+        status.append(" ", a, ".");
+      }
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (data._honey) return; // robot détecté
+
+      button.disabled = true;
+      button.textContent = form.dataset.sending ?? "…";
+      show("sending", form.dataset.sending ?? "");
+
+      try {
+        const res = await fetch(form.dataset.endpoint!, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(data),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || String(json.success) !== "true") throw new Error(json.message ?? "error");
+
+        form.reset();
+        show("success", form.dataset.success ?? "");
+      } catch {
+        show("error", form.dataset.error ?? "", form.dataset.email);
+      } finally {
+        button.disabled = false;
+        button.textContent = label;
+      }
+    });
+  }
+</script>
